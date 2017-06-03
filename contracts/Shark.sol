@@ -39,16 +39,16 @@ contract Shark {
     This function is invoked if a user wants to buy the top spot
   */
   function PayOff(string message) payable {
-    //uint amountToPay = sharkAddress.balance / 1000;
+    uint amountToPay = sharkAddress.balance / 1000;
     // Send all ether back if too little was provided
-    /*if(msg.value < amountToPay) {
+    if(msg.value < amountToPay) {
       msg.sender.transfer(msg.value);
       throw;
-    }*/
+    }
     // Send some ether back if too much was provided
-    /*if(msg.value > amountToPay) {
+    if(msg.value > amountToPay) {
       msg.sender.transfer(msg.value - amountToPay);
-    }*/
+    }
 
     // Update state
     sharkMessage = message;

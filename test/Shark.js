@@ -50,13 +50,9 @@ contract("Shark", function(accounts) {
     // Execute
     shark.Show.sendTransaction(messageToWrite, { from: account, value: 0 })
 
-    // Get the updated state
-    const sharkMessage = await shark.sharkMessage()
-    const sharkAddress = await shark.sharkAddress()
-
-    // Perform assertions
-    assert.equal(sharkAddress, account, "sharkAddress was wrong")
-    assert.equal(sharkMessage, messageToWrite, "sharkMessage was wrong")
+    // Perform assertions on updated state
+    assert.equal(await shark.sharkAddress(), account, "sharkAddress was wrong")
+    assert.equal(await shark.sharkMessage(), messageToWrite, "sharkMessage was wrong")
   })
 
   it("should \"PayOff\" correctly", async () => {
@@ -66,7 +62,7 @@ contract("Shark", function(accounts) {
     // Specify message to write
     const messageToWrite = "This is another new message"
 
-    // Set the account to use
+    // Set the account to use and get account balance
     const account = web3.eth.accounts[2]
     const accountBalance = getBalance(account)
 
@@ -79,12 +75,8 @@ contract("Shark", function(accounts) {
     // Execute
     shark.PayOff.sendTransaction(messageToWrite, { from: account, value: sharkBalance / payOffRatio })
 
-    // Get the updated state
-    const sharkMessage = await shark.sharkMessage()
-    const sharkAddress = await shark.sharkAddress()
-
-    // Perform assertions
-    assert.equal(sharkMessage, messageToWrite, "sharkMessage was wrong")
-    assert.equal(sharkAddress, account, "sharkAddress was wrong")
+    // Perform assertions on updated state
+    assert.equal(await shark.sharkAddress(), account, "sharkAddress was wrong")
+    assert.equal(await shark.sharkMessage(), messageToWrite, "sharkMessage was wrong")
   })
 })
