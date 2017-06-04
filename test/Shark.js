@@ -6,77 +6,85 @@
 
 */
 
-
-var Shark = artifacts.require("Shark");
-
-const payOffRatio = 1000
-const getBalance = account => web3.eth.getBalance(account).toNumber()
+const Shark = artifacts.require("Shark");
 
 contract("Shark", function(accounts) {
-  it("should set the initial values", async () => {
+  it("should \"Show\" amount correctly", done => {
     // Get the contract instance
-    const shark = await Shark.deployed()
+    Shark.deployed().then(shark => {
+      // Set account and message
+      const account = web3.eth.accounts[4]
+      const message = "This is a new message"
 
-    // Set the account to use
-    const account = web3.eth.accounts[0]
+      // Watch the event
+      const event = shark.Showed()
+      event.watch((error, result) => {
+        event.stopWatching()
+        // Perform assertions on updated state
+        assert.isNull(error, "There was an error: " + error)
+        assert.equal(result.args.shark, account, "sharkAddress was wrong")
+        assert.equal(result.args.message, message, "sharkMessage was wrong")
+        // Call the test finished callback
+        done()
+      })
 
-    // Get the updated state
-    const sharkMessage = await shark.sharkMessage()
-    const sharkAddress = await shark.sharkAddress()
-
-    // Perform assertions
-    assert.equal(sharkMessage, "Be the first one to show your stack", "Initial message was not correct")
-    assert.equal(sharkAddress, account, "Initial sharkAddress was not correct")
+      // Execute
+      shark.Show.sendTransaction(message, { from: account, value: 0 })
+    })
   })
 
-
-  it("should \"Show\" amount correctly", async () => {
+  it("should \"PayOff\" correctly", done => {
     // Get the contract instance
-    const shark = await Shark.deployed()
+    Shark.deployed().then(shark => {
+      // Set account and message
+      const account = web3.eth.accounts[3]
+      const message = "This is another new message"
 
-    // Specify message to write
-    const messageToWrite = "This is a new message"
+      // Get contract balance before
+      const contractBalance = web3.eth.getBalance(shark.address)
 
-    // Set the account to use
-    const account = web3.eth.accounts[3]
-    const accountBalance = getBalance(account)
+      // Watch the event
+      const event = shark.PaidOff()
+      event.watch((error, result) => {
+        event.stopWatching()
+        // Perform assertions on updated state
+        assert.isNull(error, "There was an error: " + error)
+        assert.equal(result.args.shark, account, "sharkAddress was wrong")
+        assert.equal(result.args.message, message, "sharkMessage was wrong")
+        assert.equal(web3.eth.getBalance(shark.address), contractBalance.toNumber() + 50000000000000000, "Contract balance was wrong")
+        // Call the test finished callback
+        done()
+      })
 
-    // Get the current shark balance
-    const sharkBalance = getBalance(await shark.sharkAddress())
-
-    // Make sure user has sufficient funds
-    assert.isAbove(accountBalance, sharkBalance, "User account has less value than current shark account")
-
-    // Execute
-    shark.Show.sendTransaction(messageToWrite, { from: account, value: 0 })
-
-    // Perform assertions on updated state
-    assert.equal(await shark.sharkAddress(), account, "sharkAddress was wrong")
-    assert.equal(await shark.sharkMessage(), messageToWrite, "sharkMessage was wrong")
+      // Execute
+      shark.PayOff.sendTransaction(message, { from: account, value: 50000000000000000 })
+    })
   })
 
-  it("should \"PayOff\" correctly", async () => {
+  it("should transfer out ether correctly", done => {
     // Get the contract instance
-    const shark = await Shark.deployed()
+    Shark.deployed().then(async shark => {
+      // Set account and get balance
+      const account = web3.eth.accounts[0]
+      const accountBalance = web3.eth.getBalance(account)
 
-    // Specify message to write
-    const messageToWrite = "This is another new message"
+      // Get ether balance of contract
+      const contractBalance = web3.eth.getBalance(shark.address)
 
-    // Set the account to use and get account balance
-    const account = web3.eth.accounts[2]
-    const accountBalance = getBalance(account)
+      // Watch the event
+      const event = shark.BalanceTransferred()
+      event.watch((error, result) => {
+        event.stopWatching()
+        // Perform assertions on updated state
+        assert.isBelow(web3.eth.getBalance(shark.address).toNumber(), contractBalance, "Contract balance was wrong")
+        assert.isAbove(web3.eth.getBalance(account).toNumber(), accountBalance, "User account balance was wrong")
+        // Call the test finished callback
+        done()
+      })
 
-    // Get the current shark balance
-    const sharkBalance = getBalance(await shark.sharkAddress())
-
-    // Make sure user has sufficient funds
-    assert.isAtLeast(accountBalance, sharkBalance / payOffRatio, "Insufficient funds")
-
-    // Execute
-    shark.PayOff.sendTransaction(messageToWrite, { from: account, value: sharkBalance / payOffRatio })
-
-    // Perform assertions on updated state
-    assert.equal(await shark.sharkAddress(), account, "sharkAddress was wrong")
-    assert.equal(await shark.sharkMessage(), messageToWrite, "sharkMessage was wrong")
+      // Execute
+      shark.TransferEther.sendTransaction(account, { from: account, value: 0 })
+    })
   })
+
 })

@@ -1,30 +1,39 @@
 pragma solidity ^0.4.4;
 
-contract Shark {
+contract priced {
+    modifier costs(uint price) {
+        if (msg.value >= price) {
+            _;
+        }
+    }
+}
+
+contract Shark is priced {
   // Constants
-  address constant public owner = 0xdcb2998d716b10d27790fea5161b297cb17994d1;
+  address public owner = 0x75a7C5E64dc3e06fE546AafC7F4DcBcC6718155b;
 
   // Shark state
   string public sharkMessage = "Be the first one to show your stack";
   address public sharkAddress = owner;
 
-  // Modifier to user when restriciting who can call functions
+  // Modifier to use when restriciting who can call functions
   modifier onlyBy(address _account) {
     require(msg.sender == _account);
     _;
   }
 
   // Declare events
-  event Showed(address from, string message);
-  event PaidOff(address from, string message);
-  event NewShark(address from, string message);
+  event Showed(address shark, string message);
+  event PaidOff(address shark, string message);
+  event NewShark(address shark, string message);
+  event BalanceTransferred(address shark);
 
   /*
     This function is invoked when a user wants to take the top spot by value
   */
   function Show(string message) {
     // Throw if too little ether was provided
-    if(msg.sender.balance < sharkAddress.balance) throw;
+    if(msg.sender.balance <= sharkAddress.balance) throw;
 
     // Update state
     sharkMessage = message;
@@ -38,18 +47,7 @@ contract Shark {
   /*
     This function is invoked if a user wants to buy the top spot
   */
-  function PayOff(string message) payable {
-    uint amountToPay = sharkAddress.balance / 1000;
-    // Send all ether back if too little was provided
-    if(msg.value < amountToPay) {
-      msg.sender.transfer(msg.value);
-      throw;
-    }
-    // Send some ether back if too much was provided
-    if(msg.value > amountToPay) {
-      msg.sender.transfer(msg.value - amountToPay);
-    }
-
+  function PayOff(string message) payable costs(50000000000000000) {
     // Update state
     sharkMessage = message;
     sharkAddress = msg.sender;
@@ -60,10 +58,11 @@ contract Shark {
   }
 
   /*
-    This function is invoked by me to transfer the ether used in payoffs
+    This function is called by me to transfer out ether
   */
-  function DrainPayOffs(address destination) onlyBy(owner) {
-    destination.transfer(this.balance);
+  function TransferEther(address destination) onlyBy(owner) {
+    destination.transfer(this.balance - tx.gasprice * 21000);
+    BalanceTransferred(destination);
   }
 
 }
